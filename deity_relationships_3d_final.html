@@ -91,7 +91,7 @@
   /* Mobile Responsive Formatting */
   @media (max-width: 768px) {
     html, body {
-      overflow: auto; /* Allows scrolling on mobile */
+      overflow: auto;
     }
     #container { 
       flex-direction: column; 
@@ -113,7 +113,7 @@
     #controls {
       top: 10px;
       right: 10px;
-      flex-direction: row; /* Horizontal button layout on mobile screens */
+      flex-direction: row;
     }
   }
 </style>
@@ -442,8 +442,6 @@ document.querySelectorAll("#controls button").forEach(btn => {
       .forEach(b => b.classList.toggle("active", b === btn));
   });
 });
-
-updateSideImage("both");
 </script>
 </body>
 </html>
