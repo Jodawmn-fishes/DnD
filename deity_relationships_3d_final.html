@@ -18,17 +18,18 @@
   }
 
   #plot {
-    flex: 0 0 50%;
+    flex: 0 0 60%; /* Increased width so 3D graph appears larger */
     min-width: 0;
     position: relative;
   }
 
   #controls {
     position: absolute;
-    bottom: 12px;
-    left: 12px;
+    top: 220px; /* Moves controls directly below the legend on the right */
+    right: 20px;
     z-index: 10;
     display: flex;
+    flex-direction: column; /* Stacked buttons vertically for neat legend alignment */
     gap: 8px;
   }
 
@@ -49,7 +50,7 @@
   }
 
   #sidePanel {
-    flex: 0 0 50%;
+    flex: 0 0 40%; /* Decreased 2D graph area so both graphs appear similar size */
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -60,9 +61,19 @@
     background: #fafafa;
   }
 
+  #sideImageContainer {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   #sidePanel img {
     max-width: 100%;
-    max-height: 90vh;
+    max-height: 100%;
+    width: auto;
+    height: auto;
     object-fit: contain;
     border: 1px solid #ccc;
     background: #fff;
@@ -77,14 +88,33 @@
     line-height: 1.5;
   }
 
+  /* Mobile Responsive Formatting */
   @media (max-width: 768px) {
-    #container { flex-direction: column; }
+    html, body {
+      overflow: auto; /* Allows scrolling on mobile */
+    }
+    #container { 
+      flex-direction: column; 
+      height: auto;
+      min-height: 100vh;
+    }
     #plot, #sidePanel {
       flex: 0 0 auto;
       width: 100%;
     }
-    #plot      { height: 55vh; }
-    #sidePanel { height: 45vh; border-right: none; border-top: 1px solid #ddd; }
+    #plot { 
+      height: 500px; 
+    }
+    #sidePanel { 
+      height: 400px; 
+      border-right: none; 
+      border-top: 1px solid #ddd; 
+    }
+    #controls {
+      top: 10px;
+      right: 10px;
+      flex-direction: row; /* Horizontal button layout on mobile screens */
+    }
   }
 </style>
 </head>
@@ -117,10 +147,6 @@ const imageMap = {
 // ============================================================
 // DEITY DATA
 // ============================================================
-// x = Lawful (-1) to Chaotic (+1)
-// y = Evil (-1) to Good (+1)
-// z = Obelisk (-1) / Both (0) / Party (1)
-
 const deities = [
   { name: "Mask",      alignment: "Chaotic Neutral",  x: 1,  y: 0,  z: 1,  pantheon: "Party"   },
   { name: "Silvanus",  alignment: "True Neutral",     x: 0,  y: 0,  z: 0,  pantheon: "Both"    },
@@ -203,7 +229,6 @@ const relationships = [
 // ============================================================
 // BUILD TRACES
 // ============================================================
-
 function deityByName(n) { return deities.find(d => d.name === n); }
 
 function categoryOf(rel) {
@@ -245,9 +270,6 @@ const relOrder = ["ally", "enemy", "frenemy"];
 for (const cat of catOrder) {
   for (const rt of relOrder) {
     const segs = relBuckets[cat][rt];
-
-    // Skip empty buckets — Plotly drops empty line traces anyway,
-    // so keeping them would desync traceMeta from the real trace list.
     if (segs.length === 0) continue;
 
     traces.push({
@@ -267,7 +289,7 @@ for (const cat of catOrder) {
   }
 }
 
-// Legend anchor traces (always visible, off-screen segment for the swatch)
+// Legend anchor traces
 const anchorOrder = ["ally", "enemy", "frenemy"];
 const anchorLabels = { ally: "Allies", enemy: "Foes", frenemy: "Frenemy" };
 for (const rt of anchorOrder) {
@@ -375,7 +397,8 @@ const layout = {
     },
     aspectmode: "manual",
     aspectratio: { x: 1, y: 1, z: 1 },
-    camera: { eye: { x: 2, y: 2, z: 2 } }
+    /* Adjusted z eye to move graph slightly higher in frame */
+    camera: { eye: { x: 1.8, y: 1.8, z: 2.3 } } 
   },
   legend: {
     title: { text: "Legend" },
@@ -383,7 +406,8 @@ const layout = {
     x: 1.02, xanchor: "left",
     y: 1,    yanchor: "top"
   },
-  margin: { l: 50, r: 180, b: 50, t: 70 }
+  /* Reduced top margin to shift plot higher up */
+  margin: { l: 20, r: 160, b: 20, t: 30 } 
 };
 
 Plotly.newPlot("plot", traces, layout, { responsive: true });
@@ -395,7 +419,6 @@ function updateSideImage(view) {
   const container = document.getElementById("sideImageContainer");
   const src = imageMap[view];
 
-  // If no image configured for this view, show a text card
   if (!src || src.startsWith("__")) {
     container.innerHTML =
       '<div class="empty-state">Interactive 3D view<br>(no reference chart for this mode)</div>';
@@ -412,25 +435,15 @@ document.querySelectorAll("#controls button").forEach(btn => {
   btn.addEventListener("click", () => {
     const view = btn.dataset.view;
 
-    // Update visibility AND force a redraw
     Plotly.update("plot", { visible: visMap[view] }, {});
-
-    // Update side panel image
     updateSideImage(view);
 
-    // Update active button styling
     document.querySelectorAll("#controls button")
       .forEach(b => b.classList.toggle("active", b === btn));
   });
 });
 
-// Initialize the side panel for the default view
 updateSideImage("both");
-
-console.log("Traces:", traces.length);
-console.log("visBoth:", visBoth.length);
-console.log("visParty:", visParty.length);
-console.log("visObelisk:", visObelisk.length);
 </script>
 </body>
 </html>
